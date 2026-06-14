@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Funció per comprovar si el sol·licitant és ADMIN
+    function esAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/usuaris/$(request.auth.uid)).data.rol == "ADMIN";
+    }
+
+    // Funció per comprovar si és el propi usuari
+    function esPropietari(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ─── usuaris/{uid} ───────────────────────────────────────────────────────
+    match /usuaris/{uid} {
+      // Lectura: el propi usuari o un ADMIN
+      allow read: if esPropietari(uid) || esAdmin();
+
+      // Creació: només el propi usuari (en registrar-se) amb rol MEMBRE
+      allow create: if esPropietari(uid) &&
+                       request.resource.data.rol == "MEMBRE";
+
+      // Actualització: el propi usuari, però no pot canviar el seu rol
+      allow update: if esPropietari(uid) &&
+                       request.resource.data.rol == resource.data.rol;
+    }
+
+    // ─── noticies/{id} ───────────────────────────────────────────────────────
+    match /noticies/{id} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if esAdmin();
+    }
+
+    // ─── activitats/{id} ─────────────────────────────────────────────────────
+    match /activitats/{id} {
+      allow read: if request.auth != null;
+      allow create, delete: if esAdmin();
+
+      // ADMIN pot editar tot; un MEMBRE autenticat pot només modificar 'inscrits'
+      // afegint-se o traient-se a si mateix
+      allow update: if esAdmin() ||
+                    (request.auth != null &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscrits']) &&
+                     (
+                       // Afegir-se: inscrits creix en 1 i el nou element és el propi uid
+                       (request.resource.data.inscrits.size() == resource.data.inscrits.size() + 1 &&
+                        request.resource.data.inscrits.hasAll(resource.data.inscrits) &&
+                        request.resource.data.inscrits.hasAny([request.auth.uid]))
+                       ||
+                       // Treure's: inscrits decreix en 1 i s'ha tret el propi uid
+                       (request.resource.data.inscrits.size() == resource.data.inscrits.size() - 1 &&
+                        resource.data.inscrits.hasAll(request.resource.data.inscrits) &&
+                        resource.data.inscrits.hasAny([request.auth.uid]))
+                     )
+                    );
+    }
+
+    // ─── entrenos/{id} ───────────────────────────────────────────────────────
+    match /entrenos/{id} {
+      allow read: if request.auth != null;
+      allow create, delete: if esAdmin();
+
+      // ADMIN pot editar tot; un MEMBRE pot modificar només 'assistents'
+      allow update: if esAdmin() ||
+                    (request.auth != null &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assistents']) &&
+                     (
+                       (request.resource.data.assistents.size() == resource.data.assistents.size() + 1 &&
+                        request.resource.data.assistents.hasAll(resource.data.assistents) &&
+                        request.resource.data.assistents.hasAny([request.auth.uid]))
+                       ||
+                       (request.resource.data.assistents.size() == resource.data.assistents.size() - 1 &&
+                        resource.data.assistents.hasAll(request.resource.data.assistents) &&
+                        resource.data.assistents.hasAny([request.auth.uid]))
+                     )
+                    );
+    }
+  }
+}
