@@ -21,3 +21,6 @@ node_modules/
 # Firebase config (conté claus d'API — no versionar)
 google-services.json
 GoogleService-Info.plist
+
+# Artefactes de build de release
+androidApp/release/
