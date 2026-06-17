@@ -42,14 +42,23 @@ class DetallActivitatViewModel(
         }
     }
 
-    fun apuntar(uid: String, activitatId: String) {
+    fun apuntar(uid: String, activitatId: String, categoria: String? = null) {
         viewModelScope.launch {
             try {
-                activitatsRepo.apuntar(uid, activitatId)
+                activitatsRepo.apuntar(uid, activitatId, categoria)
                 val current = _uiState.value
                 if (current is DetallActivitatUiState.Success) {
-                    val nousList = current.activitat.inscrits + uid
-                    _uiState.value = current.copy(activitat = current.activitat.copy(inscrits = nousList))
+                    val novesInscripcions = if (categoria != null) {
+                        current.activitat.inscripcions + (uid to categoria)
+                    } else {
+                        current.activitat.inscripcions
+                    }
+                    _uiState.value = current.copy(
+                        activitat = current.activitat.copy(
+                            inscrits = current.activitat.inscrits + uid,
+                            inscripcions = novesInscripcions
+                        )
+                    )
                 }
             } catch (_: Exception) {}
         }

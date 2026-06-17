@@ -63,4 +63,15 @@ object Strings {
     // Perfil
     const val EL_MEU_PERFIL = "El meu perfil"
     const val EDITA = "Edita"
+
+    // Gènere i categories
+    const val GENERE = "Gènere"
+    const val HOME = "Home"
+    const val DONA = "Dona"
+    const val SELECCIONA_GENERE = "Selecciona el gènere"
+    const val SELECCIONA_CATEGORIA = "Selecciona la categoria de pes"
+    const val CATEGORIA_PES = "Categoria de pes"
+    const val CONFIRMAR = "Confirmar"
+    const val CANCEL_LA = "Cancel·la"
+    const val SENSE_GENERE_COMPETICIO = "Configura el teu gènere al perfil per poder inscriure't a la competició"
 }
