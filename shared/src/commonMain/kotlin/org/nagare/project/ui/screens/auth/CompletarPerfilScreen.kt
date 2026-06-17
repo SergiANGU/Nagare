@@ -10,7 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import org.nagare.project.Strings
+import org.nagare.project.data.model.Genere
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompletarPerfilScreen(
     email: String,
@@ -23,6 +25,7 @@ fun CompletarPerfilScreen(
     var cognoms by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
     var dataNaixement by remember { mutableStateOf("") }
+    var genere by remember { mutableStateOf("") }
 
     LaunchedEffect(state) {
         if (state is CompletarPerfilUiState.Success) {
@@ -82,6 +85,23 @@ fun CompletarPerfilScreen(
             singleLine = true,
             supportingText = { Text("Format: dd/MM/yyyy") }
         )
+        Spacer(Modifier.height(16.dp))
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(Strings.GENERE, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(6.dp))
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                listOf(Genere.HOME to Strings.HOME, Genere.DONA to Strings.DONA).forEachIndexed { index, (opcio, label) ->
+                    SegmentedButton(
+                        selected = genere == opcio.name,
+                        onClick = { genere = opcio.name },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 2)
+                    ) {
+                        Text(label)
+                    }
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
 
         if (state is CompletarPerfilUiState.Error) {
@@ -94,7 +114,7 @@ fun CompletarPerfilScreen(
         }
 
         Button(
-            onClick = { vm.desa(nom, cognoms, dni, dataNaixement, email) },
+            onClick = { vm.desa(nom, cognoms, dni, dataNaixement, email, genere) },
             modifier = Modifier.fillMaxWidth(),
             enabled = state !is CompletarPerfilUiState.Loading
         ) {

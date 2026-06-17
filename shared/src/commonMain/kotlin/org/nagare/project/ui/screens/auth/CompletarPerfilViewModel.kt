@@ -28,9 +28,13 @@ class CompletarPerfilViewModel(
     private val _uiState = MutableStateFlow<CompletarPerfilUiState>(CompletarPerfilUiState.Idle)
     val uiState: StateFlow<CompletarPerfilUiState> = _uiState
 
-    fun desa(nom: String, cognoms: String, dni: String, dataNaixement: String, email: String) {
+    fun desa(nom: String, cognoms: String, dni: String, dataNaixement: String, email: String, genere: String) {
         if (nom.isBlank() || cognoms.isBlank() || dni.isBlank() || dataNaixement.isBlank()) {
             _uiState.value = CompletarPerfilUiState.Error("Omple tots els camps obligatoris")
+            return
+        }
+        if (genere.isBlank()) {
+            _uiState.value = CompletarPerfilUiState.Error("Selecciona el gènere")
             return
         }
         if (!validaDni(dni)) {
@@ -56,6 +60,7 @@ class CompletarPerfilViewModel(
                     dataNaixement = dataNaixement.trim(),
                     email = email.trim(),
                     rol = Rol.MEMBRE.name,
+                    genere = genere,
                     creatEl = Clock.System.now().toEpochMilliseconds()
                 )
                 usuariRepo.createUsuari(usuari)
