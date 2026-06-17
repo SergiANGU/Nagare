@@ -11,20 +11,25 @@ Language of the UI is **Catalan**. All UI strings must go through `Strings.kt` (
 ## Build commands
 
 ```bash
-# Set JAVA_HOME before any Gradle command (required on this machine)
-export JAVA_HOME=~/.gradle/jdks/amazon_com_inc_-21-aarch64-os_x.2/amazon-corretto-21.jdk/Contents/Home
+# Android — set JAVA_HOME before any Gradle command
+# macOS (Apple Silicon): export JAVA_HOME=~/.gradle/jdks/amazon_com_inc_-21-aarch64-os_x.2/amazon-corretto-21.jdk/Contents/Home
+# Windows: $env:JAVA_HOME = "$env:USERPROFILE\.gradle\jdks\amazon_com_inc_-21-amd64-windows.2"
 
 # Build Android debug APK
-./gradlew :androidApp:assembleDebug
+./gradlew :androidApp:assembleDebug          # macOS/Linux
+.\gradlew.bat :androidApp:assembleDebug      # Windows
 
 # Install on connected device/emulator
 ./gradlew :androidApp:installDebug
 
-# Run shared tests
+# Run all shared tests
 ./gradlew :shared:allTests
+
+# Run a single test class
+./gradlew :shared:allTests --tests "org.nagare.project.SharedCommonTest"
 ```
 
-For iOS: open `iosApp/iosApp.xcodeproj` in Xcode and run on simulator. `JAVA_HOME` is not needed for Xcode builds.
+For iOS: open `iosApp/iosApp.xcodeproj` in Xcode (macOS only) and run on simulator. `JAVA_HOME` is not needed for Xcode builds.
 
 ## Architecture
 
@@ -47,6 +52,9 @@ All business logic and UI code lives in `shared/src/commonMain`. Platform-specif
 | `di/AppModule.kt` | Single Koin module — all repositories as `single`, all ViewModels as `viewModel` |
 | `ui/navigation/AppNavigation.kt` | Root `NavHost`: Login → Register → CompletarPerfil → MainScreen |
 | `ui/screens/main/MainScreen.kt` | `ModalNavigationDrawer` + inner `NavHost` with Noticies / Activitats / Entrenos / Perfil |
+| `ui/screens/activitats/` | `ActivitatsScreen` + `ActivitatsViewModel` (list) and `DetallActivitatScreen` + `DetallActivitatViewModel` (detail with inscription) |
+| `ui/screens/auth/` | Login, Register, CompletarPerfil screens + ViewModels; also contains `validaDni` and `validaDataNaixement` helpers reused by `PerfilScreen` |
+| `ui/screens/perfil/PerfilScreen.kt` | Profile screen — **exception to the pattern**: `PerfilViewModel` is defined inline in this file and instantiated with `remember { PerfilViewModel(koinInject()) }` instead of being registered in Koin |
 | `ui/theme/Theme.kt` | Material 3 theme (blue/black BJJ palette) |
 
 ### Firestore collections
@@ -65,7 +73,7 @@ entrenos/{id}       — titol, data, lloc, notes, assistents: [uid]
 
 ### Navigation flow
 
-`AppNavigation` checks on startup: no session → Login; session but no profile doc → CompletarPerfil; session + profile → MainScreen. `MainScreen` uses a nested NavHost inside a `ModalNavigationDrawer`.
+`AppNavigation` checks on startup: no session → Login; session but no profile doc → CompletarPerfil; session + profile → MainScreen. `MainScreen` uses a nested NavHost inside a `ModalNavigationDrawer` with four destinations: Noticies (default), Activitats, Entrenos, Perfil. The `DetallActivitatScreen` is also inside `MainScreen`'s NavHost at `detall_activitat/{activitatId}`.
 
 ### Koin initialization
 
