@@ -15,12 +15,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.nagare.project.Strings
+import org.nagare.project.data.model.Genere
 import org.nagare.project.data.model.Usuari
 import org.nagare.project.data.repository.UsuariRepository
 import org.nagare.project.ui.screens.auth.validaDni
 import org.nagare.project.ui.screens.auth.validaDataNaixement
 
-// ViewModel inline per al perfil
 sealed class PerfilUiState {
     data object Idle : PerfilUiState()
     data object Loading : PerfilUiState()
@@ -32,9 +32,13 @@ class PerfilViewModel(private val usuariRepo: UsuariRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<PerfilUiState>(PerfilUiState.Idle)
     val uiState: StateFlow<PerfilUiState> = _uiState
 
-    fun desa(usuari: Usuari, nom: String, cognoms: String, dni: String, dataNaixement: String) {
+    fun desa(usuari: Usuari, nom: String, cognoms: String, dni: String, dataNaixement: String, genere: String) {
         if (nom.isBlank() || cognoms.isBlank() || dni.isBlank() || dataNaixement.isBlank()) {
             _uiState.value = PerfilUiState.Error("Omple tots els camps")
+            return
+        }
+        if (genere.isBlank()) {
+            _uiState.value = PerfilUiState.Error("Selecciona el gènere")
             return
         }
         if (!validaDni(dni)) {
@@ -53,7 +57,8 @@ class PerfilViewModel(private val usuariRepo: UsuariRepository) : ViewModel() {
                         nom = nom.trim(),
                         cognoms = cognoms.trim(),
                         dni = dni.trim().uppercase(),
-                        dataNaixement = dataNaixement.trim()
+                        dataNaixement = dataNaixement.trim(),
+                        genere = genere
                     )
                 )
                 _uiState.value = PerfilUiState.Success
@@ -66,6 +71,7 @@ class PerfilViewModel(private val usuariRepo: UsuariRepository) : ViewModel() {
     fun resetState() { _uiState.value = PerfilUiState.Idle }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
     usuari: Usuari,
@@ -80,12 +86,21 @@ fun PerfilScreen(
     var cognoms by remember(usuari) { mutableStateOf(usuari.cognoms) }
     var dni by remember(usuari) { mutableStateOf(usuari.dni) }
     var dataNaixement by remember(usuari) { mutableStateOf(usuari.dataNaixement) }
+    var genere by remember(usuari) { mutableStateOf(usuari.genere) }
 
     LaunchedEffect(state) {
         if (state is PerfilUiState.Success) {
             vm.resetState()
             editant = false
-            onActualitzat(usuari.copy(nom = nom.trim(), cognoms = cognoms.trim(), dni = dni.trim().uppercase(), dataNaixement = dataNaixement.trim()))
+            onActualitzat(
+                usuari.copy(
+                    nom = nom.trim(),
+                    cognoms = cognoms.trim(),
+                    dni = dni.trim().uppercase(),
+                    dataNaixement = dataNaixement.trim(),
+                    genere = genere
+                )
+            )
         }
     }
 
@@ -102,7 +117,7 @@ fun PerfilScreen(
         ) {
             Text(Strings.EL_MEU_PERFIL, style = MaterialTheme.typography.headlineSmall)
             TextButton(onClick = { editant = !editant }) {
-                Text(if (editant) "Cancel·la" else Strings.EDITA)
+                Text(if (editant) Strings.CANCEL_LA else Strings.EDITA)
             }
         }
 
@@ -118,6 +133,32 @@ fun PerfilScreen(
         OutlinedTextField(value = dni, onValueChange = { dni = it }, label = { Text(Strings.DNI) }, modifier = Modifier.fillMaxWidth(), enabled = editant, singleLine = true)
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = dataNaixement, onValueChange = { dataNaixement = it }, label = { Text(Strings.DATA_NAIXEMENT) }, modifier = Modifier.fillMaxWidth(), enabled = editant, singleLine = true)
+        Spacer(Modifier.height(16.dp))
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(Strings.GENERE, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(6.dp))
+            if (editant) {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    listOf(Genere.HOME to Strings.HOME, Genere.DONA to Strings.DONA).forEachIndexed { index, (opcio, label) ->
+                        SegmentedButton(
+                            selected = genere == opcio.name,
+                            onClick = { genere = opcio.name },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = 2)
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+            } else {
+                val etiquetaGenere = when (genere) {
+                    Genere.HOME.name -> Strings.HOME
+                    Genere.DONA.name -> Strings.DONA
+                    else -> "No establert"
+                }
+                Text(etiquetaGenere, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
 
         if (state is PerfilUiState.Error) {
             Spacer(Modifier.height(8.dp))
@@ -127,7 +168,7 @@ fun PerfilScreen(
         if (editant) {
             Spacer(Modifier.height(16.dp))
             Button(
-                onClick = { vm.desa(usuari, nom, cognoms, dni, dataNaixement) },
+                onClick = { vm.desa(usuari, nom, cognoms, dni, dataNaixement, genere) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state !is PerfilUiState.Loading
             ) {
