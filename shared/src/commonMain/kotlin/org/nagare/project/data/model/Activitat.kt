@@ -11,5 +11,6 @@ data class Activitat(
     val dataInici: Long = 0L,
     val dataFi: Long? = null,
     val lloc: String = "",
-    val inscrits: List<String> = emptyList()
+    val inscrits: List<String> = emptyList(),
+    val inscripcions: Map<String, String> = emptyMap()
 )

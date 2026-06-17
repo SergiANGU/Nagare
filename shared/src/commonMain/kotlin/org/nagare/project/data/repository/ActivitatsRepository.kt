@@ -30,8 +30,15 @@ class ActivitatsRepository {
         col().add(activitat)
     }
 
-    suspend fun apuntar(uid: String, activitatId: String) {
-        col().document(activitatId).update("inscrits" to FieldValue.arrayUnion(uid))
+    suspend fun apuntar(uid: String, activitatId: String, categoria: String? = null) {
+        if (categoria != null) {
+            col().document(activitatId).update(
+                "inscrits" to FieldValue.arrayUnion(uid),
+                "inscripcions.$uid" to categoria
+            )
+        } else {
+            col().document(activitatId).update("inscrits" to FieldValue.arrayUnion(uid))
+        }
     }
 
     suspend fun desapuntar(uid: String, activitatId: String) {
