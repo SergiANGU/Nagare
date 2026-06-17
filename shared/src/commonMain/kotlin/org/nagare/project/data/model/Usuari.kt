@@ -11,5 +11,6 @@ data class Usuari(
     val dataNaixement: String = "",
     val email: String = "",
     val rol: String = Rol.MEMBRE.name,
+    val genere: String = "",
     val creatEl: Long = 0L
 )
